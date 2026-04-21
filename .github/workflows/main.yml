@@ -2,10 +2,9 @@ name: Daily OFAC List Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 매일 한국 시간 오전 9시
-  workflow_dispatch:      # 수동 실행 버튼
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
-# 전역 환경 변수 설정 (Node.js 24 강제 사용)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -17,7 +16,7 @@ jobs:
       
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # 최신 버전 유지
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,16 +29,28 @@ jobs:
 
       - name: Run script
         run: |
-          # 데이터 다운로드 및 추출 실행
+          # 1. 파일 다운로드
           wget https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN_ADVANCED.ZIP
           unzip -o SDN_ADVANCED.ZIP
+          
+          # 2. 파이썬 파일이 존재하는지 확인 (에러 방지용)
+          ls -R
+          
+          # 3. 스크립트 실행 (파일명이 generate_ofac.py인지 꼭 확인!)
           python generate_ofac.py
 
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          # 변경사항 확인 후 커밋 (XBT->BTC 변환된 CSV 반영)
-          git add ofac_sanctioned_addresses.csv
-          git commit -m "Update OFAC list: $(date +'%Y-%m-%d') (Node24)" || exit 0
-          git push
+          
+          # CSV 파일이 실제로 생성되었는지 확인
+          if [ -f ofac_sanctioned_addresses.csv ]; then
+            git add ofac_sanctioned_addresses.csv
+            # 변경사항이 있을 때만 커밋, 없으면 그냥 패스
+            git commit -m "Update OFAC list: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+            git push
+          else
+            echo "Error: CSV file not found!"
+            exit 1
+          fi
