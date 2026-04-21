@@ -2,15 +2,13 @@ name: Daily OFAC List Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    - cron: '0 0 * * *'  # 매일 오전 9시
+  workflow_dispatch:      # 수동 실행
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 쓰기 권한 명시
     permissions:
       contents: write
       
@@ -24,33 +22,19 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install pandas requests
+        run: pip install pandas requests
 
       - name: Run script
         run: |
-          # 1. 파일 다운로드
           wget https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN_ADVANCED.ZIP
           unzip -o SDN_ADVANCED.ZIP
-          
-          # 2. 파이썬 파일이 존재하는지 확인 (에러 방지용)
-          ls -R
-          
-          # 3. 스크립트 실행 (파일명이 generate_ofac.py인지 꼭 확인!)
+          # 파일명이 다르면 여기서 에러가 납니다. 이름을 꼭 확인하세요!
           python generate_ofac.py
 
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
-          # CSV 파일이 실제로 생성되었는지 확인
-          if [ -f ofac_sanctioned_addresses.csv ]; then
-            git add ofac_sanctioned_addresses.csv
-            # 변경사항이 있을 때만 커밋, 없으면 그냥 패스
-            git commit -m "Update OFAC list: $(date +'%Y-%m-%d')" || echo "No changes to commit"
-            git push
-          else
-            echo "Error: CSV file not found!"
-            exit 1
-          fi
+          git add ofac_sanctioned_addresses.csv
+          git commit -m "Update OFAC list: $(date +'%Y-%m-%d')" || exit 0
+          git push
