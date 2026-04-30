@@ -16,8 +16,8 @@ def main():
 
     print("USDT 온체인 블랙리스트 수집 중...")
     
-    # 이더스캔 API 호출 URL 구성
-    url = f"https://api.etherscan.io/api?module=logs&action=getLogs&fromBlock=0&toBlock=latest&address={CONTRACT_ADDRESS}&topic0={TOPIC0}&apikey={API_KEY}"
+    # [수정됨] 이더스캔 API V2 호출 URL로 변경
+    url = f"https://api.etherscan.io/v2/api?chainid=1&module=logs&action=getLogs&fromBlock=0&toBlock=latest&address={CONTRACT_ADDRESS}&topic0={TOPIC0}&apikey={API_KEY}"
     
     response = requests.get(url).json()
     
@@ -36,7 +36,6 @@ def main():
         df.to_csv(output_name, index=False, encoding='utf-8-sig')
         print(f"성공: {len(df)}개 USDT 동결 지갑 추출 완료 ({output_name} 저장)")
     else:
-        # 방금 수정한 상세 에러 확인용 코드 (들여쓰기 완벽하게 맞춤)
         print(f"API 호출 실패: {response.get('message')} / 상세내용: {response.get('result')}")
 
 if __name__ == "__main__":
