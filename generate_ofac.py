@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
 import os
-from datetime import datetime  # 날짜 라이브러리 추가
 
 # 파일 경로 및 네임스페이스 설정
 xml_file = "SDN_ADVANCED.XML"
@@ -51,9 +50,8 @@ def main():
     # 중복 제거 및 정렬
     df = df.drop_duplicates().sort_values(by=["코인명(ofac제재지갑)", "지갑주소"])
 
-    # --- [수정 구간] 오늘 날짜를 파일명에 추가 ---
-    today = datetime.now().strftime('%Y%m%d')
-    output_name = f"ofac_sanctioned_addresses_{today}.csv"
+    # --- [수정 구간] 고정 파일명으로 변경 (매일 덮어쓰기) ---
+    output_name = "ofac_sanctioned_addresses.csv"
     # ---------------------------------------------
     
     df.to_csv(output_name, index=False, encoding='utf-8-sig')
