@@ -1,55 +1,56 @@
 import requests
 import pandas as pd
-import io
+import re
+
+def is_valid_eth_address(address):
+    # 이더리움 지갑 주소 정규식 (0x로 시작하고 뒤에 40자리의 16진수)
+    pattern = re.compile(r'^0x[a-fA-F0-9]{40}$')
+    return bool(pattern.match(address))
 
 def main():
-    print("글로벌 OSINT 위험 지갑 리스트 수집 시작...")
-    malicious_wallets = []
+    print("글로벌 위험 지갑 리스트 정밀 수집 시작...")
+    raw_data = []
 
-    # 소스 1: CryptoscamDB (유명한 스캠 지갑 리스트)
+    # 소스 1: CryptoscamDB (URL과 주소가 섞여 있음)
     try:
-        print("- 소스 1: CryptoscamDB 수집 중...")
         url_1 = "https://raw.githubusercontent.com/CryptoScamDB/blacklist/master/addresses.json"
         res = requests.get(url_1).json()
-        for addr in res:
-            malicious_wallets.append(["Scam/Fraud", addr.lower()])
-    except:
-        print("! 소스 1 수집 실패")
+        for item in res:
+            # item 자체가 주소 문자열인 경우와 객체인 경우 모두 대응
+            addr = item if isinstance(item, str) else item.get('address', '')
+            if is_valid_eth_address(addr):
+                raw_data.append(["Scam/Fraud", addr.lower()])
+    except: print("! 소스 1 수집 실패")
 
-    # 소스 2: MyEtherWallet (MEW) 블랙리스트
+    # 소스 2: MyEtherWallet (주로 지갑 주소 위주)
     try:
-        print("- 소스 2: MyEtherWallet 블랙리스트 수집 중...")
         url_2 = "https://raw.githubusercontent.com/MyEtherWallet/ethereum-lists/master/src/addresses/blacklisted-addresses.json"
         res = requests.get(url_2).json()
         for item in res:
-            malicious_wallets.append(["Hacker/Malicious", item['address'].lower()])
-    except:
-        print("! 소스 2 수집 실패")
+            addr = item.get('address', '')
+            if is_valid_eth_address(addr):
+                raw_data.append(["Hacker/Malicious", addr.lower()])
+    except: print("! 소스 2 수집 실패")
 
-    # 소스 3: 보안 전문가 통합 리스트 (GitHub OSINT)
+    # 소스 3: ScamSniffer (최신 피싱 지갑 리스트)
     try:
-        print("- 소스 3: 보안 전문가 통합 리스트 수집 중...")
-        # 전 세계 보안 커뮤니티에서 관리하는 피싱/스캠 주소들
         url_3 = "https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/combined.json"
         res = requests.get(url_3).json()
         for addr in res:
-            malicious_wallets.append(["Phishing/Scam", addr.lower()])
-    except:
-        print("! 소스 3 수집 실패")
+            if is_valid_eth_address(addr):
+                raw_data.append(["Phishing", addr.lower()])
+    except: print("! 소스 3 수집 실패")
 
-    # 데이터 정리
-    if malicious_wallets:
-        df = pd.DataFrame(malicious_wallets, columns=["위험분류", "지갑주소"])
-        # 주소 형식 정리 및 중복 제거
-        df['지갑주소'] = df['지갑주소'].str.strip()
+    # 데이터 정리 및 저장
+    if raw_data:
+        df = pd.DataFrame(raw_data, columns=["위험분류", "지갑주소"])
         df = df.drop_duplicates(subset=['지갑주소']).sort_values(by="위험분류")
         
-        # CSV 저장
         output_name = "malicious_addresses.csv"
         df.to_csv(output_name, index=False, encoding='utf-8-sig')
-        print(f"성공: 총 {len(df)}개의 위험 지갑 리스트 업데이트 완료 ({output_name})")
+        print(f"✅ 필터링 완료: 총 {len(df)}개의 유효한 지갑 주소 추출 성공!")
     else:
-        print("수집된 데이터가 없습니다.")
+        print("❌ 유효한 지갑 주소를 찾지 못했습니다.")
 
 if __name__ == "__main__":
     main()
