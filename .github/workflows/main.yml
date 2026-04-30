@@ -35,9 +35,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # OFAC 및 OpenSanctions 파일 모두 추가
-          git add ofac_sanctioned_addresses_*.csv 
-          git add opensanctions_addresses_*.csv
+          # 고정된 파일명만 덮어쓰기 및 추가
+          git add ofac_sanctioned_addresses.csv 
+          git add opensanctions_addresses.csv
           
+          # 커밋 기록에만 업데이트 날짜 표시
           git commit -m "Update list $(date +'%Y%m%d')" || exit 0
           git push origin main --force
