@@ -38,8 +38,8 @@ def main():
         output_name = "usdt_blacklist_addresses.csv"
         df.to_csv(output_name, index=False, encoding='utf-8-sig')
         print(f"성공: {len(df)}개 USDT 동결 지갑 추출 완료 ({output_name} 저장)")
-    else:
-        print(f"API 호출 실패: {response.get('message')}")
+        else:
+        print(f"API 호출 실패: {response.get('message')} / 상세내용: {response.get('result')}")
 
 if __name__ == "__main__":
     main()
