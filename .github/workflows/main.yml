@@ -1,9 +1,9 @@
-name: Daily OFAC Update
+name: Daily Sanction List Update
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # 매일 자정 실행
+  workflow_dispatch:      # 수동 실행 버튼 활성화
 
 jobs:
   build:
@@ -20,29 +20,28 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install
+      - name: Install Dependencies
         run: pip install pandas requests
 
-      - name: Run
-        env:
-          # 금고에서 이더스캔 키만 꺼내오기
-          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+      - name: Run Data Collection
         run: |
+          # 1. OFAC 데이터 다운로드 및 분석
           wget https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN_ADVANCED.ZIP
           unzip -o SDN_ADVANCED.ZIP
           python generate_ofac.py
+          
+          # 2. OpenSanctions 데이터 분석
           python generate_opensanctions.py
-          python generate_usdt.py
 
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # 만들어진 3개 파일 깃허브에 추가 (덮어쓰기)
+          # 생성된 2개 파일만 관리합니다.
           git add ofac_sanctioned_addresses.csv 
           git add opensanctions_addresses.csv
-          git add usdt_blacklist_addresses.csv 
           
-          git commit -m "Update list $(date +'%Y%m%d')" || exit 0
+          # 변경사항이 있을 때만 커밋
+          git commit -m "Update Sanction Lists $(date +'%Y%m%d')" || exit 0
           git push origin main --force
