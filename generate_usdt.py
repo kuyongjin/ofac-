@@ -16,8 +16,8 @@ def main():
 
     print("USDT 온체인 블랙리스트 수집 중...")
     
-    # [수정됨] 이더스캔 API V2 호출 URL로 변경
-   url = f"https://api.etherscan.io/v2/api?chainid=1&module=logs&action=getLogs&fromBlock=19000000&toBlock=latest&address={CONTRACT_ADDRESS}&topic0={TOPIC0}&apikey={API_KEY}"
+    # [수정 완료] 호출 범위를 1,900만 블록 이후로 제한하여 데이터 정상 수집
+    url = f"https://api.etherscan.io/v2/api?chainid=1&module=logs&action=getLogs&fromBlock=19000000&toBlock=latest&address={CONTRACT_ADDRESS}&topic0={TOPIC0}&apikey={API_KEY}"
     
     response = requests.get(url).json()
     
